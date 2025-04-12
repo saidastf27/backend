@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/saida-portfolio/static/css/main.56135ed0.css",
+    "main.js": "/saida-portfolio/static/js/main.420b3a65.js",
+    "static/js/453.00029dc1.chunk.js": "/saida-portfolio/static/js/453.00029dc1.chunk.js",
+    "static/media/chatbot2.png": "/saida-portfolio/static/media/chatbot2.3072ebe911f1bbf0a0ed.png",
+    "index.html": "/saida-portfolio/index.html",
+    "main.56135ed0.css.map": "/saida-portfolio/static/css/main.56135ed0.css.map",
+    "main.420b3a65.js.map": "/saida-portfolio/static/js/main.420b3a65.js.map",
+    "453.00029dc1.chunk.js.map": "/saida-portfolio/static/js/453.00029dc1.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.56135ed0.css",
+    "static/js/main.420b3a65.js"
+  ]
+}
