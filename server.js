@@ -32,6 +32,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 
   .then(() => console.log('MongoDB connecté'))
   .catch(err => console.error('Erreur de connexion MongoDB:', err));
+  console.log("Connecting to MongoDB with URI:", process.env.MONGODB_URI);
+
 
 // Modèle de Message
 const MessageSchema = new mongoose.Schema({
