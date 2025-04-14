@@ -20,10 +20,16 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // Connexion à MongoDB Atlas ou locale
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chatbotDB', {
+/*mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chatbotDB', {
+
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})*/
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
+
   .then(() => console.log('MongoDB connecté'))
   .catch(err => console.error('Erreur de connexion MongoDB:', err));
 
