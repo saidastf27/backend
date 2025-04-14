@@ -19,8 +19,11 @@ app.use(cors({
 // Middleware pour analyser le corps des requêtes
 app.use(bodyParser.json());
 
-// Connexion à MongoDB (version mise à jour sans options dépréciées)
-mongoose.connect('mongodb://localhost:27017/chatbotDB')
+// Connexion à MongoDB Atlas ou locale
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chatbotDB', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
   .then(() => console.log('MongoDB connecté'))
   .catch(err => console.error('Erreur de connexion MongoDB:', err));
 
