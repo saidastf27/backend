@@ -36,11 +36,9 @@ const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Initialisation du client Dialogflow
 const sessionClient = new SessionsClient({
-  credentials: {
-    client_email: process.env.DIALOGFLOW_CLIENT_EMAIL,
-    private_key: process.env.DIALOGFLOW_PRIVATE_KEY,
-  }
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
 });
+
 
 // ✅ Route d'accueil simple pour éviter les erreurs 404
 app.get('/', (req, res) => {
