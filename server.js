@@ -35,10 +35,8 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Initialisation du client Dialogflow
-const sessionClient = new SessionsClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
-});
-
+const sessionClient = new dialogflow.SessionsClient();
+const projectId = 'mychatbot-cilr';
 
 // ✅ Route d'accueil simple pour éviter les erreurs 404
 app.get('/', (req, res) => {
