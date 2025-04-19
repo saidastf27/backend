@@ -13,8 +13,9 @@ const port = process.env.PORT || 5000;
 
 // Middleware CORS pour autoriser les requêtes depuis React
 app.use(cors({
-  origin: 'http://localhost:3000', // Remplace cette adresse si nécessaire
+  origin: 'https://saida-stifi.vercel.app',  // URL de votre frontend déployé sur Vercel
 }));
+
 
 // Middleware pour analyser le corps des requêtes
 app.use(bodyParser.json());
