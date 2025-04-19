@@ -19,13 +19,12 @@ app.use(cors({
 }));
 
 // Middleware pour parser le corps JSON
-//app.use(bodyParser.json());
+app.use(bodyParser.json());  // Ajouté pour que les requêtes POST avec JSON soient correctement traitées
 
 // ✅ Connexion MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connexion à MongoDB réussie'))
   .catch(err => console.error('❌ Erreur de connexion MongoDB:', err));
-
 
 // ✅ Schéma et modèle MongoDB
 const MessageSchema = new mongoose.Schema({
@@ -42,8 +41,6 @@ const sessionClient = new SessionsClient({
     private_key: process.env.DIALOGFLOW_PRIVATE_KEY,
   }
 });
-
-
 
 // ✅ Route d'accueil simple pour éviter les erreurs 404
 app.get('/', (req, res) => {
