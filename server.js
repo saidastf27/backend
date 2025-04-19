@@ -35,13 +35,9 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// 🔐 Chargement des credentials depuis une variable d'environnement
-const dialogflowCredentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+// 🔐 Chargement des credentials Dialogflow depuis le fichier JSON
 const sessionClient = new SessionsClient({
-  credentials: {
-    client_email: dialogflowCredentials.client_email,
-    private_key: dialogflowCredentials.private_key
-  }
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS  // Utilisation du fichier JSON spécifié dans .env
 });
 
 // Endpoint pour récupérer les messages
