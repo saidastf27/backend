@@ -22,12 +22,10 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // ✅ Connexion MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ Connexion à MongoDB réussie'))
-.catch(err => console.error('❌ Erreur MongoDB :', err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connexion à MongoDB réussie'))
+  .catch(err => console.error('❌ Erreur de connexion MongoDB:', err));
+
 
 // ✅ Schéma et modèle MongoDB
 const MessageSchema = new mongoose.Schema({
