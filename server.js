@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config();  // Charge les variables d'environnement depuis .env
 const express = require('express');
 const bodyParser = require('body-parser');
 const { SessionsClient } = require('@google-cloud/dialogflow');
@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 
 // Middleware CORS pour autoriser les requêtes depuis React
 app.use(cors({
-  origin: 'https://saida-stifi.vercel.app',
+  origin: 'https://saida-stifi.vercel.app',  // Remplacez par l'URL de votre frontend si nécessaire
 }));
 
 // Middleware pour analyser le corps des requêtes
@@ -24,8 +24,8 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connecté'))
-.catch(err => console.error('Erreur de connexion MongoDB:', err));
+  .then(() => console.log('MongoDB connecté'))
+  .catch(err => console.error('Erreur de connexion MongoDB:', err));
 
 // Modèle de Message
 const MessageSchema = new mongoose.Schema({
@@ -36,8 +36,15 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', MessageSchema);
 
 // 🔐 Chargement des credentials Dialogflow depuis le fichier JSON
+const googleCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (!googleCredentialsPath) {
+  console.error("Erreur: La variable d'environnement GOOGLE_APPLICATION_CREDENTIALS n'est pas définie.");
+} else {
+  console.log("Fichier de credentials trouvé:", googleCredentialsPath);
+}
+
 const sessionClient = new SessionsClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS  // Utilisation du fichier JSON spécifié dans .env
+  keyFilename: googleCredentialsPath  // Utilisation du fichier JSON spécifié dans .env
 });
 
 // Endpoint pour récupérer les messages
