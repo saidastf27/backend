@@ -1,4 +1,4 @@
-require('dotenv').config();  // Charge les variables d'environnement depuis .env
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const { SessionsClient } = require('@google-cloud/dialogflow');
@@ -7,27 +7,29 @@ const mongoose = require('mongoose');
 const uuid = require('uuid');
 const path = require('path');
 
-// Initialisation de l'application Express
+// Initialisation Express
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Middleware CORS pour autoriser les requêtes depuis React
+// CORS pour autoriser React (Vercel)
 app.use(cors({
-  origin: 'https://saida-stifi.vercel.app',  // Remplacez par l'URL de votre frontend si nécessaire
+  origin: 'https://saida-stifi.vercel.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
 }));
 
-// Middleware pour analyser le corps des requêtes
+// Middleware pour parser le corps JSON
 app.use(bodyParser.json());
 
-// Connexion MongoDB
+// ✅ Connexion MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('MongoDB connecté'))
-  .catch(err => console.error('Erreur de connexion MongoDB:', err));
+.then(() => console.log('✅ Connexion à MongoDB réussie'))
+.catch(err => console.error('❌ Erreur MongoDB :', err));
 
-// Modèle de Message
+// ✅ Schéma et modèle MongoDB
 const MessageSchema = new mongoose.Schema({
   role: String,
   content: String,
@@ -35,48 +37,55 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// 🔐 Chargement des credentials Dialogflow depuis le fichier JSON
-const googleCredentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-if (!googleCredentialsPath) {
-  console.error("Erreur: La variable d'environnement GOOGLE_APPLICATION_CREDENTIALS n'est pas définie.");
-} else {
-  console.log("Fichier de credentials trouvé:", googleCredentialsPath);
-}
-
+// ✅ Initialisation du client Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: googleCredentialsPath  // Utilisation du fichier JSON spécifié dans .env
+  keyFilename: path.resolve(__dirname, process.env.GOOGLE_APPLICATION_CREDENTIALS)
 });
 
-// Endpoint pour récupérer les messages
+// ✅ Route d'accueil simple pour éviter les erreurs 404
+app.get('/', (req, res) => {
+  res.send('🚀 Backend opérationnel !');
+});
+
+// ✅ Récupérer les anciens messages
 app.get('/api/messages', async (req, res) => {
   try {
     const messages = await Message.find().sort({ timestamp: 1 });
     res.json(messages);
   } catch (error) {
+    console.error('Erreur récupération messages:', error);
     res.status(500).send({ error: 'Erreur lors de la récupération des messages' });
   }
 });
 
-// Endpoint de chat
+// ✅ Gérer l'envoi d'un message au chatbot
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
-  if (!message) return res.status(400).send({ error: 'Message is required' });
 
-  const userMessage = new Message({ role: 'user', content: message });
-  await userMessage.save();
+  if (!message) {
+    return res.status(400).send({ error: 'Message requis' });
+  }
 
   try {
+    // Sauvegarde du message utilisateur
+    await new Message({ role: 'user', content: message }).save();
+
     const sessionPath = sessionClient.projectAgentSessionPath('mychatbot-cilr', uuid.v4());
+
     const responses = await sessionClient.detectIntent({
       session: sessionPath,
       queryInput: {
-        text: { text: message, languageCode: 'en' }
-      }
+        text: {
+          text: message,
+          languageCode: 'en',
+        },
+      },
     });
 
     const botMessage = responses[0].queryResult.fulfillmentText || "Je n'ai pas compris.";
-    const botMessageEntry = new Message({ role: 'bot', content: botMessage });
-    await botMessageEntry.save();
+
+    // Sauvegarde de la réponse du bot
+    await new Message({ role: 'bot', content: botMessage }).save();
 
     res.send({ response: botMessage });
   } catch (error) {
@@ -85,13 +94,13 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Servir les fichiers statiques (React build)
+// ✅ Servir l'application React buildée (optionnel si Railway ne la sert pas)
 app.use(express.static(path.join(__dirname, 'saida-portfolio/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'saida-portfolio/build', 'index.html'));
 });
 
-// Démarrer le serveur
+// ✅ Lancement du serveur
 app.listen(port, () => {
-  console.log(`Backend server running on port ${port}`);
+  console.log(`🚀 Serveur backend lancé sur le port ${port}`);
 });
