@@ -48,6 +48,9 @@ const sessionClient = new SessionsClient({
   },
   projectId: process.env.GOOGLE_PROJECT_ID,
 });
+console.log(process.env.GOOGLE_CLIENT_EMAIL);
+console.log(process.env.GOOGLE_PROJECT_ID);
+console.log(process.env.GOOGLE_PRIVATE_KEY);
 
 // ✅ Test route
 app.get('/', (req, res) => {
