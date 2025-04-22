@@ -89,10 +89,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Démarrer le serveur
-app.listen(port, () => {
-  console.log(`Serveur lancé sur le port ${port}`);
-});
+
 /*
 // ✅ Gérer l'envoi d'un message au chatbot
 app.post('/api/chat', async (req, res) => {
