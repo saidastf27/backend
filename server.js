@@ -10,28 +10,26 @@ const path = require('path');
 // Initialisation Express
 const app = express();
 
-// ✅ Configuration CORS (placé en haut pour éviter les erreurs)
+// ✅ Middleware CORS
 const corsOptions = {
   origin: 'https://saida-stifi.vercel.app',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // pour gérer les requêtes OPTIONS
 
-// Middleware pour parser le corps JSON
+// ✅ Middleware JSON
 app.use(bodyParser.json());
 
-// Port
-const port = process.env.PORT || 5000;
-
 // ✅ Connexion MongoDB
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ Connexion à MongoDB réussie'))
-  .catch((err) => console.error('❌ Erreur de connexion MongoDB:', err));
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ Connexion à MongoDB réussie'))
+.catch((err) => console.error('❌ Erreur MongoDB:', err));
 
-// ✅ Schéma et modèle MongoDB
+// ✅ Schéma de messages
 const MessageSchema = new mongoose.Schema({
   role: String,
   content: String,
@@ -39,7 +37,7 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// ✅ Initialisation du client Dialogflow
+// ✅ Client Dialogflow
 const sessionClient = new SessionsClient({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -48,7 +46,7 @@ const sessionClient = new SessionsClient({
   projectId: process.env.GOOGLE_PROJECT_ID,
 });
 
-// ✅ Route d'accueil simple
+// ✅ Test route
 app.get('/', (req, res) => {
   res.send('🚀 Backend opérationnel !');
 });
@@ -60,53 +58,58 @@ app.get('/api/messages', async (req, res) => {
     res.json(messages);
   } catch (error) {
     console.error('Erreur récupération messages:', error);
-    res.status(500).send({ error: 'Erreur lors de la récupération des messages' });
+    res.status(500).json({ error: 'Erreur lors de la récupération des messages' });
   }
 });
 
-// ✅ Route de chat
+// ✅ Envoyer un message à Dialogflow
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
 
+  if (!message) {
+    return res.status(400).json({ error: 'Message vide' });
+  }
+
   const sessionId = uuid.v4();
-  const sessionPath = sessionClient.projectAgentSessionPath(process.env.GOOGLE_PROJECT_ID, sessionId);
+  const sessionPath = sessionClient.projectAgentSessionPath(
+    process.env.GOOGLE_PROJECT_ID,
+    sessionId
+  );
 
   const request = {
     session: sessionPath,
     queryInput: {
       text: {
         text: message,
-        languageCode: 'fr',
+        languageCode: 'en-fr',
       },
     },
   };
 
   try {
-    // Sauvegarde du message utilisateur
     await new Message({ role: 'user', content: message }).save();
 
     const responses = await sessionClient.detectIntent(request);
     const result = responses[0].queryResult;
-
     const botReply = result.fulfillmentText || "Je n'ai pas compris.";
 
-    // Sauvegarde de la réponse du bot
     await new Message({ role: 'bot', content: botReply }).save();
 
     res.json({ reply: botReply });
   } catch (error) {
-    console.error('Erreur de communication avec Dialogflow:', error);
+    console.error('❌ Erreur Dialogflow:', error);
     res.status(500).json({ error: 'Erreur de communication avec Dialogflow' });
   }
 });
 
-// ✅ Servir l'application React (build statique)
+// ✅ Servir le build React
 app.use(express.static(path.join(__dirname, 'saida-portfolio/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'saida-portfolio/build', 'index.html'));
 });
 
-// ✅ Lancement du serveur
+// ✅ Démarrer le serveur
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`🚀 Serveur backend lancé sur le port ${port}`);
+  console.log(`🚀 Serveur lancé sur http://localhost:${port}`);
 });
