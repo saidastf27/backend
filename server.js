@@ -35,9 +35,17 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Initialisation du client Dialogflow
+/*
 const sessionClient = new SessionsClient();
 const projectId = 'mychatbot-cilr';
-
+*/
+const sessionClient = new dialogflow.SessionsClient({
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  },
+  projectId: process.env.GOOGLE_PROJECT_ID,
+});
 // ✅ Route d'accueil simple
 app.get('/', (req, res) => {
   res.send('🚀 Backend opérationnel !');
@@ -53,7 +61,39 @@ app.get('/api/messages', async (req, res) => {
     res.status(500).send({ error: 'Erreur lors de la récupération des messages' });
   }
 });
+// Route de chat
+app.post('/api/chat', async (req, res) => {
+  const { message } = req.body;
 
+  const sessionId = uuidv4();
+  const sessionPath = sessionClient.projectAgentSessionPath(process.env.GOOGLE_PROJECT_ID, sessionId);
+
+  const request = {
+    session: sessionPath,
+    queryInput: {
+      text: {
+        text: message,
+        languageCode: 'fr', // ou 'en' selon ton agent Dialogflow
+      },
+    },
+  };
+
+  try {
+    const responses = await sessionClient.detectIntent(request);
+    const result = responses[0].queryResult;
+
+    res.json({ reply: result.fulfillmentText });
+  } catch (error) {
+    console.error('Erreur de communication avec Dialogflow:', error);
+    res.status(500).json({ error: 'Erreur de communication avec Dialogflow' });
+  }
+});
+
+// Démarrer le serveur
+app.listen(port, () => {
+  console.log(`Serveur lancé sur le port ${port}`);
+});
+/*
 // ✅ Gérer l'envoi d'un message au chatbot
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
@@ -88,7 +128,7 @@ app.post('/api/chat', async (req, res) => {
     console.error('Erreur Dialogflow:', error);
     res.status(500).send({ error: 'Erreur de communication avec Dialogflow' });
   }
-});
+});*/
 
 // ✅ Servir l'application React buildée (optionnel si Railway ne la sert pas)
 app.use(express.static(path.join(__dirname, 'saida-portfolio/build')));
