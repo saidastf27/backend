@@ -9,38 +9,37 @@ const path = require('path');
 
 // Initialisation Express
 const app = express();
-const port = process.env.PORT || 5000;
 
-
-// CORS pour autoriser React (Vercel)
+// ✅ Configuration CORS (placé en haut pour éviter les erreurs)
 const corsOptions = {
   origin: 'https://saida-stifi.vercel.app',
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
+  allowedHeaders: ['Content-Type'],
 };
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // pour gérer les requêtes OPTIONS
 
 // Middleware pour parser le corps JSON
 app.use(bodyParser.json());
 
+// Port
+const port = process.env.PORT || 5000;
+
 // ✅ Connexion MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+mongoose
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ Connexion à MongoDB réussie'))
-  .catch(err => console.error('❌ Erreur de connexion MongoDB:', err));
+  .catch((err) => console.error('❌ Erreur de connexion MongoDB:', err));
 
 // ✅ Schéma et modèle MongoDB
 const MessageSchema = new mongoose.Schema({
   role: String,
   content: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Initialisation du client Dialogflow
-/*
-const sessionClient = new SessionsClient();
-const projectId = 'mychatbot-cilr';
-*/
 const sessionClient = new SessionsClient({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -48,6 +47,7 @@ const sessionClient = new SessionsClient({
   },
   projectId: process.env.GOOGLE_PROJECT_ID,
 });
+
 // ✅ Route d'accueil simple
 app.get('/', (req, res) => {
   res.send('🚀 Backend opérationnel !');
@@ -63,11 +63,12 @@ app.get('/api/messages', async (req, res) => {
     res.status(500).send({ error: 'Erreur lors de la récupération des messages' });
   }
 });
-// Route de chat
+
+// ✅ Route de chat
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
 
-  const sessionId = uuidv4();
+  const sessionId = uuid.v4();
   const sessionPath = sessionClient.projectAgentSessionPath(process.env.GOOGLE_PROJECT_ID, sessionId);
 
   const request = {
@@ -75,61 +76,31 @@ app.post('/api/chat', async (req, res) => {
     queryInput: {
       text: {
         text: message,
-        languageCode: 'fr', // ou 'en' selon ton agent Dialogflow
+        languageCode: 'fr',
       },
     },
   };
 
   try {
+    // Sauvegarde du message utilisateur
+    await new Message({ role: 'user', content: message }).save();
+
     const responses = await sessionClient.detectIntent(request);
     const result = responses[0].queryResult;
 
-    res.json({ reply: result.fulfillmentText });
+    const botReply = result.fulfillmentText || "Je n'ai pas compris.";
+
+    // Sauvegarde de la réponse du bot
+    await new Message({ role: 'bot', content: botReply }).save();
+
+    res.json({ reply: botReply });
   } catch (error) {
     console.error('Erreur de communication avec Dialogflow:', error);
     res.status(500).json({ error: 'Erreur de communication avec Dialogflow' });
   }
 });
 
-
-/*
-// ✅ Gérer l'envoi d'un message au chatbot
-app.post('/api/chat', async (req, res) => {
-  const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).send({ error: 'Message requis' });
-  }
-
-  try {
-    // Sauvegarde du message utilisateur
-    await new Message({ role: 'user', content: message }).save();
-
-    const sessionPath = sessionClient.projectAgentSessionPath(projectId, uuid.v4());
-
-    const responses = await sessionClient.detectIntent({
-      session: sessionPath,
-      queryInput: {
-        text: {
-          text: message,
-          languageCode: 'en',
-        },
-      },
-    });
-
-    const botMessage = responses[0].queryResult.fulfillmentText || "Je n'ai pas compris.";
-
-    // Sauvegarde de la réponse du bot
-    await new Message({ role: 'bot', content: botMessage }).save();
-
-    res.send({ response: botMessage });
-  } catch (error) {
-    console.error('Erreur Dialogflow:', error);
-    res.status(500).send({ error: 'Erreur de communication avec Dialogflow' });
-  }
-});*/
-
-// ✅ Servir l'application React buildée (optionnel si Railway ne la sert pas)
+// ✅ Servir l'application React (build statique)
 app.use(express.static(path.join(__dirname, 'saida-portfolio/build')));
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'saida-portfolio/build', 'index.html'));
