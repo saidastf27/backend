@@ -11,12 +11,15 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 5000;
 
+const cors = require('cors');
+
 // CORS pour autoriser React (Vercel)
-app.use(cors({
+const corsOptions = {
   origin: 'https://saida-stifi.vercel.app',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
-}));
+};
+app.use(cors(corsOptions));
 
 // Middleware pour parser le corps JSON
 app.use(bodyParser.json());
