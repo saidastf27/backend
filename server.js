@@ -19,7 +19,7 @@ app.use(cors({
 }));
 
 // Middleware pour parser le corps JSON
-app.use(bodyParser.json());  // Ajouté pour que les requêtes POST avec JSON soient correctement traitées
+app.use(bodyParser.json());
 
 // ✅ Connexion MongoDB
 mongoose.connect(process.env.MONGODB_URI)
@@ -35,10 +35,10 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Initialisation du client Dialogflow
-const sessionClient = new dialogflow.SessionsClient();
+const sessionClient = new SessionsClient();
 const projectId = 'mychatbot-cilr';
 
-// ✅ Route d'accueil simple pour éviter les erreurs 404
+// ✅ Route d'accueil simple
 app.get('/', (req, res) => {
   res.send('🚀 Backend opérationnel !');
 });
@@ -66,7 +66,7 @@ app.post('/api/chat', async (req, res) => {
     // Sauvegarde du message utilisateur
     await new Message({ role: 'user', content: message }).save();
 
-    const sessionPath = sessionClient.projectAgentSessionPath('mychatbot-cilr', uuid.v4());
+    const sessionPath = sessionClient.projectAgentSessionPath(projectId, uuid.v4());
 
     const responses = await sessionClient.detectIntent({
       session: sessionPath,
