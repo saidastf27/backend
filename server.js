@@ -39,7 +39,7 @@ const Message = mongoose.model('Message', MessageSchema);
 const sessionClient = new SessionsClient();
 const projectId = 'mychatbot-cilr';
 */
-const sessionClient = new dialogflow.SessionsClient({
+const sessionClient = new SessionsClient({
   credentials: {
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
