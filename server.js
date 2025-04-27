@@ -40,9 +40,12 @@ const MessageSchema = new mongoose.Schema({
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// ✅ Client Dialogflow
+// Créer un client pour Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,  // Utilisation de la variable d'environnement
+  credentials: {
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Remplacer les \n échappés
+  },
 });
 
 // ✅ Test route
