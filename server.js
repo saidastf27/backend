@@ -34,7 +34,7 @@ const Message = mongoose.model('Message', MessageSchema);
 
 // Initialisation du client Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: './mychatbot-cilr-d0525c521b1a.json',  // Remplace par ton chemin exact du fichier JSON
+  keyFilename: './mychatbot-cilr-255c6808b454.json',  // Remplace par ton chemin exact du fichier JSON
 });
 
 // Endpoint pour récupérer l'historique des messages
