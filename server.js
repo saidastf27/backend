@@ -8,7 +8,7 @@ const uuid = require('uuid');
 const path = require('path');
 
 // ✅ Définir le chemin vers le fichier d'identifiants Dialogflow
-process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'mychatbot-cilr-d0525c521b1a.json');
+process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'mychatbot-cilr-255c6808b454.json');
 
 // Initialisation Express
 const app = express();
