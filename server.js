@@ -7,79 +7,108 @@ const mongoose = require('mongoose');
 const uuid = require('uuid');
 const path = require('path');
 
-// Initialisation de l'application Express
+// ✅ Définir le chemin vers le fichier d'identifiants Dialogflow
+//process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'mychatbot-cilr-255c6808b454.json');
+
+// Initialisation Express
 const app = express();
-const port = process.env.PORT || 5000;
 
-// Middleware CORS pour autoriser les requêtes depuis React
-app.use(cors({
-  origin: 'http://localhost:3000', // Remplace cette adresse si nécessaire
-}));
+// ✅ Middleware CORS
+const corsOptions = {
+  origin: 'https://saida-stifi.vercel.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+};
+app.use(cors(corsOptions));
 
-// Middleware pour analyser le corps des requêtes
+// ✅ Middleware JSON
 app.use(bodyParser.json());
 
-// Connexion à MongoDB (version mise à jour sans options dépréciées)
-mongoose.connect('mongodb://localhost:27017/chatbotDB')
-  .then(() => console.log('MongoDB connecté'))
-  .catch(err => console.error('Erreur de connexion MongoDB:', err));
+// ✅ Connexion MongoDB
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('✅ Connexion à MongoDB réussie'))
+.catch((err) => console.error('❌ Erreur MongoDB:', err));
 
-// Modèle de Message
+// ✅ Schéma de messages
 const MessageSchema = new mongoose.Schema({
   role: String,
   content: String,
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 const Message = mongoose.model('Message', MessageSchema);
 
-// Initialisation du client Dialogflow
+// ✅ Client Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: './mychatbot-cilr-255c6808b454.json',  // Remplace par ton chemin exact du fichier JSON
+  keyFilename: './mychatbot-cilr-97552f64143c.json',  // Remplace par ton chemin exact du fichier JSON
 });
 
-// Endpoint pour récupérer l'historique des messages
+// ✅ Test route
+app.get('/', (req, res) => {
+  res.send('🚀 Backend opérationnel !');
+});
+
+// ✅ Récupérer les anciens messages
 app.get('/api/messages', async (req, res) => {
   try {
     const messages = await Message.find().sort({ timestamp: 1 });
     res.json(messages);
   } catch (error) {
-    res.status(500).send({ error: 'Erreur lors de la récupération des messages' });
+    console.error('Erreur récupération messages:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des messages' });
   }
 });
 
-// Endpoint pour envoyer le message au chatbot et le stocker
+// ✅ Envoyer un message à Dialogflow
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
-  if (!message) return res.status(400).send({ error: 'Message is required' });
 
-  const userMessage = new Message({ role: 'user', content: message });
-  await userMessage.save();
+  if (!message) {
+    return res.status(400).json({ error: 'Message vide' });
+  }
+
+  const sessionId = uuid.v4();
+  const sessionPath = sessionClient.projectAgentSessionPath(
+    process.env.GOOGLE_PROJECT_ID,
+    sessionId
+  );
+
+  const request = {
+    session: sessionPath,
+    queryInput: {
+      text: {
+        text: message,
+        languageCode: 'en-fr',
+      },
+    },
+  };
 
   try {
-    const responses = await sessionClient.detectIntent({
-      session: sessionClient.projectAgentSessionPath('mychatbot-cilr', uuid.v4()),
-      queryInput: { text: { text: message, languageCode: 'en' } }
-    });
+    await new Message({ role: 'user', content: message }).save();
 
-    const botMessage = responses[0].queryResult.fulfillmentText || "Je n'ai pas compris.";
-    const botMessageEntry = new Message({ role: 'bot', content: botMessage });
-    await botMessageEntry.save();
+    const responses = await sessionClient.detectIntent(request);
+    const result = responses[0].queryResult;
+    const botReply = result.fulfillmentText || "Je n'ai pas compris.";
 
-    res.send({ response: botMessage });
+    await new Message({ role: 'bot', content: botReply }).save();
+
+    res.json({ reply: botReply });
   } catch (error) {
-    res.status(500).send({ error: 'Erreur de communication avec Dialogflow' });
+    console.error('❌ Erreur Dialogflow:', error);
+    res.status(500).json({ error: 'Erreur de communication avec Dialogflow' });
   }
 });
 
-// Servir les fichiers statiques de la build React
+// ✅ Servir le build React
 app.use(express.static(path.join(__dirname, 'saida-portfolio/build')));
-
-// Toute autre route de ton API, si tu en as
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'saida-portfolio/build', 'index.html'));
 });
 
-// Lancer le serveur
+// ✅ Démarrer le serveur
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
-  console.log(`Backend server running on port ${port}`);
+  console.log(`🚀 Serveur lancé sur http://localhost:${port}`);
 });
