@@ -42,7 +42,7 @@ const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Client Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: './mychatbot-cilr-f49c837ebc7b.json',  // Remplace par ton chemin exact du fichier JSON
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,  // Utilisation de la variable d'environnement
 });
 
 // ✅ Test route
