@@ -8,7 +8,7 @@ const uuid = require('uuid');
 const path = require('path');
 
 // ✅ Définir le chemin vers le fichier d'identifiants Dialogflow
-process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, process.env.GOOGLE_PRIVATE_KEY_ID);  // Utiliser les variables d'environnement
+//process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'mychatbot-cilr-255c6808b454.json');
 
 // Initialisation Express
 const app = express();
@@ -42,7 +42,7 @@ const Message = mongoose.model('Message', MessageSchema);
 
 // ✅ Client Dialogflow
 const sessionClient = new SessionsClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,  // Utiliser le chemin du fichier d'identification depuis .env
+  keyFilename: './mychatbot-cilr-f49c837ebc7b.json',  // Remplace par ton chemin exact du fichier JSON
 });
 
 // ✅ Test route
@@ -80,7 +80,7 @@ app.post('/api/chat', async (req, res) => {
     queryInput: {
       text: {
         text: message,
-        languageCode: 'fr-en',  // J'ai corrigé pour correspondre au français
+        languageCode: 'en-fr',
       },
     },
   };
