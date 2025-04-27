@@ -80,7 +80,7 @@ app.post('/api/chat', async (req, res) => {
     queryInput: {
       text: {
         text: message,
-        languageCode: 'fr',  // J'ai corrigé pour correspondre au français
+        languageCode: 'fr-en',  // J'ai corrigé pour correspondre au français
       },
     },
   };
