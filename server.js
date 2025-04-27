@@ -6,6 +6,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const uuid = require('uuid');
 const path = require('path');
+const cookieParser = require('cookie-parser'); // Ajouté pour gérer les cookies
 
 // ✅ Définir le chemin vers le fichier d'identifiants Dialogflow
 //process.env.GOOGLE_APPLICATION_CREDENTIALS = path.join(__dirname, 'mychatbot-cilr-255c6808b454.json');
@@ -23,6 +24,7 @@ app.use(cors(corsOptions));
 
 // ✅ Middleware JSON
 app.use(bodyParser.json());
+app.use(cookieParser());  // Middleware pour parser les cookies
 
 // ✅ Connexion MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -32,10 +34,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('✅ Connexion à MongoDB réussie'))
 .catch((err) => console.error('❌ Erreur MongoDB:', err));
 
-// ✅ Schéma de messages
+// Schéma de messages
 const MessageSchema = new mongoose.Schema({
   role: String,
   content: String,
+  sessionId: String, // Ajout du champ sessionId
   timestamp: { type: Date, default: Date.now },
 });
 const Message = mongoose.model('Message', MessageSchema);
@@ -55,8 +58,13 @@ app.get('/', (req, res) => {
 
 // ✅ Récupérer les anciens messages
 app.get('/api/messages', async (req, res) => {
+  const sessionId = req.cookies.sessionId; // Récupérer l'ID de session à partir des cookies
+
+  if (!sessionId) {
+    return res.status(400).json({ error: 'Session non trouvée' });
+  }
   try {
-    const messages = await Message.find().sort({ timestamp: 1 });
+    const messages = await Message.find({ sessionId }).sort({ timestamp: 1 });
     res.json(messages);
   } catch (error) {
     console.error('Erreur récupération messages:', error);
@@ -72,7 +80,12 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Message vide' });
   }
 
-  const sessionId = uuid.v4();
+  // Générer un ID de session si ce n'est pas déjà fait
+  let sessionId = req.cookies.sessionId;
+  if (!sessionId) {
+    sessionId = uuid.v4(); // Créer un nouvel ID de session
+    res.cookie('sessionId', sessionId, { httpOnly: true }); // Sauvegarder le sessionId dans un cookie
+  }
   const sessionPath = sessionClient.projectAgentSessionPath(
     process.env.GOOGLE_PROJECT_ID,
     sessionId
@@ -89,13 +102,15 @@ app.post('/api/chat', async (req, res) => {
   };
 
   try {
-    await new Message({ role: 'user', content: message }).save();
+    // Sauvegarder le message utilisateur avec l'ID de session
+    await new Message({ role: 'user', content: message, sessionId }).save();
 
     const responses = await sessionClient.detectIntent(request);
     const result = responses[0].queryResult;
     const botReply = result.fulfillmentText || "Je n'ai pas compris.";
 
-    await new Message({ role: 'bot', content: botReply }).save();
+    // Sauvegarder la réponse du bot avec l'ID de session
+    await new Message({ role: 'bot', content: botReply, sessionId }).save();
 
     res.json({ reply: botReply });
   } catch (error) {
